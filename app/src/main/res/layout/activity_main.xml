@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#e5deef"
     tools:context=".MainMenu">
 
     <TextView
@@ -24,6 +25,8 @@
         android:layout_height="75dp"
         android:text="Gallery"
         android:textSize="30sp"
+        android:textColor="#333333"
+        android:backgroundTint="#aca2ce"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/QuizBtn"
         app:layout_constraintStart_toStartOf="parent"
@@ -35,6 +38,8 @@
         android:layout_height="75dp"
         android:text="Quiz"
         android:textSize="30sp"
+        android:textColor="#333333"
+        android:backgroundTint="#aca2ce"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/GalleryBtn"
