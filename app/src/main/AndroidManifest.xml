@@ -12,17 +12,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QuizApp">
         <activity
-            android:name=".Gallery"
+            android:name=".activities.Gallery"
             android:exported="false"
             android:label="@string/title_activity_gallery"
             android:theme="@style/Theme.QuizApp" />
         <activity
-            android:name=".Quiz"
+            android:name=".activities.Quiz"
             android:exported="false"
             android:label="@string/title_activity_quiz"
             android:theme="@style/Theme.QuizApp" />
         <activity
-            android:name=".MainMenu"
+            android:name=".activities.MainMenu"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

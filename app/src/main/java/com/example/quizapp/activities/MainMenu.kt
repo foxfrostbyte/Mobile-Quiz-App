@@ -1,11 +1,14 @@
-package com.example.quizapp
+package com.example.quizapp.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.quizapp.R
+import com.example.quizapp.data.PhotoManager
 
 class MainMenu : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,10 +21,10 @@ class MainMenu : AppCompatActivity() {
             insets
         }
         // Buttons in main menu, redirecting to new activities:
-        findViewById<android.widget.Button>(R.id.GalleryBtn).setOnClickListener {
+        findViewById<Button>(R.id.GalleryBtn).setOnClickListener {
             startActivity(Intent(this, Gallery::class.java));
         }
-        findViewById<android.widget.Button>(R.id.QuizBtn).setOnClickListener {
+        findViewById<Button>(R.id.QuizBtn).setOnClickListener {
             startActivity(Intent(this, Quiz::class.java));
         }
     }
