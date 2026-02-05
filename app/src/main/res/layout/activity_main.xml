@@ -10,6 +10,7 @@
 
     <TextView
         android:text="MAIN MENU"
+        android:textColor="@color/black"
         android:textSize="40sp"
         android:textStyle="bold"
         android:layout_marginTop="150dp"
@@ -25,7 +26,7 @@
         android:layout_height="75dp"
         android:text="Gallery"
         android:textSize="30sp"
-        android:textColor="#333333"
+        android:textColor="@color/black"
         android:backgroundTint="#aca2ce"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/QuizBtn"
@@ -38,7 +39,7 @@
         android:layout_height="75dp"
         android:text="Quiz"
         android:textSize="30sp"
-        android:textColor="#333333"
+        android:textColor="@color/black"
         android:backgroundTint="#aca2ce"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

@@ -1,21 +1,17 @@
 package com.example.quizapp.activities
 
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,16 +23,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.quizapp.data.PhotoManager
 import com.example.quizapp.models.Photo
 import com.example.quizapp.ui.theme.QuizAppTheme
@@ -59,6 +55,7 @@ fun GalleryScreen() {
     val context = LocalContext.current
     var showNameDialog by remember { mutableStateOf<Photo?>(null) }
     var photoName by remember { mutableStateOf("")}
+    val shape = RoundedCornerShape(50.dp)
 
     val selectImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -78,9 +75,7 @@ fun GalleryScreen() {
             .fillMaxSize()
             .background(Color(0xFFe5deef))
     ) {
-        // Vertical stack of main content:
         Column {
-            // Title of page:
             Text(
                 text="GALLERY",
                 fontSize = 50.sp,
@@ -90,65 +85,43 @@ fun GalleryScreen() {
                     .fillMaxWidth()
                     .padding(top = 50.dp, bottom = 10.dp)
             )
-            // Descriptive under-title:
+
             Text(
-                text="Add/edit/delete images for quiz",
+                text="Add/delete images for quiz",
                 fontSize = 20.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 15.dp)
             )
-            // Actual grid with the images:
+
             LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
+                columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.weight(1f)
             ) {
                 items(photos) { photo ->
-                    Column {
-                        // Image card:
-                        if (photo.id != null) {
-                            Image(
-                                painter = painterResource(id = photo.id),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .aspectRatio(1f)
-                                    .border(5.dp, Color.White)
-                            )
-                        }
-                        else if (photo.uri != null){
-                            val bitmap = remember(photo.uri) {
-                                context.contentResolver.openInputStream(photo.uri)?.use { stream ->
-                                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
-                                }
-                            }
-                            bitmap?.let {
-                                Image(
-                                    bitmap = it,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .aspectRatio(1f)
-                                        .border(5.dp, Color.White)
-                                )
-                            }
-                        }
-                        // Answer text:
+                    Column (
+                    ) {
+                        AsyncImage(
+                            model = photo.uri ?: photo.id,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .aspectRatio(1f)
+                                .clip(shape)
+                                .border(5.dp, Color.Black, shape)
+                        )
                         Text(
-                            text = photo.answer,
+                            text = photo.answer.lowercase(),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(Color.White)
-                                .padding(bottom = 5.dp)
                         )
                     }
                 }
