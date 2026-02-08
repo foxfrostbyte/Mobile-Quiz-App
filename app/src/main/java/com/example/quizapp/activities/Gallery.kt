@@ -53,9 +53,12 @@ class Gallery : ComponentActivity() {
 fun GalleryScreen() {
     val photos = PhotoManager.photoList
     val context = LocalContext.current
+    val shape = RoundedCornerShape(50.dp)
+
     var showNameDialog by remember { mutableStateOf<Photo?>(null) }
     var photoName by remember { mutableStateOf("")}
-    val shape = RoundedCornerShape(50.dp)
+    var sortedAsc by remember { mutableStateOf(true)};
+    var sortText by remember { mutableStateOf("Z-A")};
 
     val selectImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -70,76 +73,119 @@ fun GalleryScreen() {
         }
     }
 
-    Box(
+
+    Column (
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFe5deef))
-    ) {
-        Column {
-            Text(
-                text="GALLERY",
-                fontSize = 50.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 50.dp, bottom = 10.dp)
-            )
+    ){
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            item(span = {GridItemSpan(2)}) {
+                Text(
+                    text="GALLERY",
+                    fontSize = 50.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 35.dp)
+                )
+            }
 
-            Text(
-                text="Add/delete images for quiz",
-                fontSize = 20.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 15.dp)
-            )
+            item(span = {GridItemSpan(2)}) {
+                Text(
+                    text="Add/delete images for quiz",
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 15.dp)
+                )
+            }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(photos) { photo ->
-                    Column (
-                    ) {
-                        AsyncImage(
-                            model = photo.uri ?: photo.id,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .aspectRatio(1f)
-                                .clip(shape)
-                                .border(5.dp, Color.Black, shape)
-                        )
-                        Text(
-                            text = photo.answer.lowercase(),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        )
-                    }
+            items(photos) { photo ->
+                Column {
+                    AsyncImage(
+                        model = photo.uri ?: photo.id,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .aspectRatio(1f)
+                            .clip(shape)
+                            .border(5.dp, Color.Black, shape)
+                    )
+                    Text(
+                        text = photo.answer,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
                 }
             }
-            Button(
-                onClick = { selectImage.launch(arrayOf("image/*")) },
-                shape = RoundedCornerShape(10),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 100.dp, start = 20.dp, end = 20.dp)
-            ) {
-                Text("Add photo")
-            }
+        }
+        Button(
+            onClick = { selectImage.launch(arrayOf("image/*")) },
+            shape = RoundedCornerShape(10),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Black,
+                contentColor = Color.White
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp, start = 20.dp, end = 20.dp)
+        ) {
+            Text("Add Photo")
+        }
+        Button(
+            onClick = {
+                if (sortedAsc) {
+                    photos.sortByDescending { it.answer }
+                    sortText = "A-Z"
+                    sortedAsc = false;
+                }
+                else {
+                    photos.sortBy { it.answer }
+                    sortText = "Z-A"
+                    sortedAsc = true;
+                }
+            },
+            shape = RoundedCornerShape(10),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Black,
+                contentColor = Color.White
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp, start = 20.dp, end = 20.dp)
+        ) {
+            Text("Sort By $sortText")
+        }
+        Button(
+            onClick = {
+                PhotoManager.deleteAll()
+            },
+            shape = RoundedCornerShape(10),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Black,
+                contentColor = Color.White
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 100.dp, start = 20.dp, end = 20.dp)
+        ) {
+            Text("Delete All")
         }
     }
+
 
     showNameDialog?.let { photo ->
         AlertDialog(

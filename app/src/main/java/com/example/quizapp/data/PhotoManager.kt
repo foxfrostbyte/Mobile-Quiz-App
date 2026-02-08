@@ -14,13 +14,15 @@ object PhotoManager {
         photoList.add(Photo(R.drawable.racoon_image, "Racoon"))
         photoList.add(Photo(R.drawable.giraffe_image, "Giraffe"))
         photoList.add(Photo(R.drawable.tiger_image, "Tiger"))
+
+        photoList.sortBy { it.answer }
     }
 
     fun addPhoto(photo: Photo) {
         photoList.add(photo)
     }
 
-    fun removePhoto(photo: Photo) {
-        photoList.remove(photo)
+    fun deleteAll() {
+        photoList.clear()
     }
 }
