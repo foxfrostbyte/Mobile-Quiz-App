@@ -5,4 +5,6 @@
 - No database at the moment, but it will still remember the gallery and added photos until you restart the app. You can leave the app and come back (it will still remember), but not close it entirely.
 <br>
 
-<img height="500" src="https://github.com/user-attachments/assets/e331469b-9af7-4e25-ac3b-a9dab060359e" alt="QuizAppGif" style="max-height: 700px; width: auto;">
+<div align="center">
+  <img height="700" src="https://github.com/user-attachments/assets/e331469b-9af7-4e25-ac3b-a9dab060359e" alt="QuizAppGif" style="max-height: 700px; width: auto;">
+</div>
