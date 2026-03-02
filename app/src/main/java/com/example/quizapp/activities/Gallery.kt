@@ -57,8 +57,8 @@ fun GalleryScreen() {
 
     var showNameDialog by remember { mutableStateOf<Photo?>(null) }
     var photoName by remember { mutableStateOf("")}
-    var sortedAsc by remember { mutableStateOf(true)};
-    var sortText by remember { mutableStateOf("Z-A")};
+    var sortedAsc by remember { mutableStateOf(true)}
+    var sortText by remember { mutableStateOf("Z-A")}
 
     val selectImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -150,12 +150,12 @@ fun GalleryScreen() {
                 if (sortedAsc) {
                     photos.sortByDescending { it.answer }
                     sortText = "A-Z"
-                    sortedAsc = false;
+                    sortedAsc = false
                 }
                 else {
                     photos.sortBy { it.answer }
                     sortText = "Z-A"
-                    sortedAsc = true;
+                    sortedAsc = true
                 }
             },
             shape = RoundedCornerShape(10),
