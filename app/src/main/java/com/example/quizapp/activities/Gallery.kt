@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +60,7 @@ fun GalleryScreen() {
     var photoName by remember { mutableStateOf("")}
     var sortedAsc by remember { mutableStateOf(true)}
     var sortText by remember { mutableStateOf("Z-A")}
+    var selectionMode by remember { mutableStateOf(false) }
 
     val selectImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -72,7 +74,6 @@ fun GalleryScreen() {
             photoName = ""
         }
     }
-
 
     Column (
         modifier = Modifier
@@ -97,7 +98,6 @@ fun GalleryScreen() {
                         .padding(top = 35.dp)
                 )
             }
-
             item(span = {GridItemSpan(2)}) {
                 Text(
                     text="Add/delete images for quiz",
@@ -108,19 +108,32 @@ fun GalleryScreen() {
                         .padding(bottom = 15.dp)
                 )
             }
-
             items(photos) { photo ->
                 Column {
-                    AsyncImage(
-                        model = photo.uri ?: photo.id,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
                             .aspectRatio(1f)
                             .clip(shape)
-                            .border(5.dp, Color.Black, shape)
-                    )
+                            .clickable(enabled = selectionMode) {
+                                PhotoManager.photoList.remove(photo)
+                            }
+                    ) {
+                        AsyncImage(
+                            model = photo.uri ?: photo.id,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .border(5.dp, Color.Black, shape)
+                        )
+                        if (selectionMode) {
+                            Box(
+                                modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0x66FF0000))
+                            )
+                        }
+                    }
                     Text(
                         text = photo.answer,
                         fontSize = 15.sp,
@@ -171,7 +184,7 @@ fun GalleryScreen() {
         }
         Button(
             onClick = {
-                PhotoManager.deleteAll()
+                selectionMode = !selectionMode
             },
             shape = RoundedCornerShape(10),
             colors = ButtonDefaults.buttonColors(
@@ -182,7 +195,7 @@ fun GalleryScreen() {
                 .fillMaxWidth()
                 .padding(bottom = 100.dp, start = 20.dp, end = 20.dp)
         ) {
-            Text("Delete All")
+            Text(if (selectionMode) "Return to normal mode" else "Delete")
         }
     }
 

@@ -21,8 +21,4 @@ object PhotoManager {
     fun addPhoto(photo: Photo) {
         photoList.add(photo)
     }
-
-    fun deleteAll() {
-        photoList.clear()
-    }
 }
