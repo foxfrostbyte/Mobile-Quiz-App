@@ -2,6 +2,7 @@ package com.example.quizapp.activities
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.quizapp.data.PhotoManager
 import com.example.quizapp.models.Photo
@@ -65,7 +68,37 @@ fun QuizScreen(modifier: Modifier = Modifier) {
     var currentPhoto by remember { mutableStateOf<Photo?>(null) }
     var answerOptions by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    if(photos.size < 3) return
+    if(photos.size < 3) {
+        val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+        Dialog(onDismissRequest = {}) {
+            Column(
+                modifier = Modifier
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(24.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    "Not enough photos",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("You need at least 3 photos in order to play the quiz.")
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = { backDispatcher?.onBackPressed() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Return to main menu")
+                }
+            }
+        }
+        return
+    }
 
     fun nextQuestion() {
         currentPhoto = photos[currentRound - 1]
