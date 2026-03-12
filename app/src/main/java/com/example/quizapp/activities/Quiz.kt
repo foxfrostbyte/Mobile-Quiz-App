@@ -21,25 +21,28 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.quizapp.data.PhotoManager
-import com.example.quizapp.models.Photo
 import com.example.quizapp.ui.theme.QuizAppTheme
+import com.example.quizapp.viewmodels.QuizViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.quizapp.repository.AppRepo
+import com.example.quizapp.room.AppDatabase
 
 class Quiz : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,32 +61,44 @@ class Quiz : ComponentActivity() {
 }
 
 @Composable
-fun QuizScreen(modifier: Modifier = Modifier) {
-    val totalRounds = 3
-    val photos = remember {PhotoManager.photoList.shuffled().take(totalRounds)}
+fun QuizScreen(
+    modifier: Modifier = Modifier,
+    quizViewModel: QuizViewModel? = null
+) {
     val shape = RoundedCornerShape(150.dp)
+    val context = LocalContext.current
+    val vm = quizViewModel ?: viewModel<QuizViewModel>(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val db = AppDatabase.getDatabase(context)
+                val repository = AppRepo(db.dao)
+                return QuizViewModel(repository) as T
+            }
+        }
+    )
 
-    var currentRound by remember { mutableIntStateOf(1) }
-    var score by remember { mutableIntStateOf(0) }
-    var currentPhoto by remember { mutableStateOf<Photo?>(null) }
-    var answerOptions by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(Unit) { vm.loadQuiz() }
 
-    if(photos.size < 3) {
+    if(vm.notEnoughPhotos) {
         val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-        Dialog(onDismissRequest = {}) {
+        Dialog(onDismissRequest = { backDispatcher?.onBackPressed() }) {
             Column(
                 modifier = Modifier
-                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .background(Color(0xFFaca2ce), RoundedCornerShape(16.dp))
                     .padding(24.dp)
                     .fillMaxWidth()
             ) {
                 Text(
                     "Not enough photos",
                     fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("You need at least 3 photos in order to play the quiz.")
+                Text(
+                    "You need at least 3 photos in order to play the quiz.",
+                    color = Color.Black)
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = { backDispatcher?.onBackPressed() },
@@ -100,36 +115,22 @@ fun QuizScreen(modifier: Modifier = Modifier) {
         return
     }
 
-    fun nextQuestion() {
-        currentPhoto = photos[currentRound - 1]
-
-        val wrongAnswers = PhotoManager.photoList
-            .filter { it.answer != currentPhoto?.answer }
-            .shuffled()
-            .take(2)
-            .map{ it.answer }
-
-        answerOptions = (listOf(currentPhoto?.answer ?: "") + wrongAnswers).shuffled()
-    }
-
-    LaunchedEffect(Unit) {
-        if(answerOptions.isEmpty()) nextQuestion()
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFe5deef))
     ) {
-        if(currentRound > totalRounds) {
+        if(vm.isQuizOver) {
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "Score: $score / $totalRounds",
+                text = "Score: ${vm.score} / ${vm.totalRounds}",
                 color = Color.Black,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { testTag = "score" }
             )
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -152,33 +153,36 @@ fun QuizScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .fillMaxWidth()
             )
-            AsyncImage(
-                model = currentPhoto?.uri ?: currentPhoto?.id,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .padding(50.dp)
-                    .aspectRatio(1f)
-                    .clip(shape)
-                    .border(5.dp, Color.Black, shape)
-            )
-            answerOptions.forEach { option ->
-                Button(
-                    onClick = {
-                        if (option == currentPhoto?.answer) score++
-                        currentRound++
-                        if(currentRound <= totalRounds) nextQuestion()
-                    },
-                    shape = RoundedCornerShape(10),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black,
-                        contentColor = Color.White
-                    ),
+            vm.currentQuestion?.let { q ->
+                val imageUri = when {
+                    !q.photo.uriString.isNullOrBlank() -> q.photo.uriString.toUri()
+                    q.photo.drawableId != null -> "android.resource://${context.packageName}/${q.photo.drawableId}".toUri()
+                    else -> null
+                }
+                AsyncImage(
+                    model = imageUri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
-                ) {
-                    Text(option)
+                        .padding(50.dp)
+                        .aspectRatio(1f)
+                        .clip(shape)
+                        .border(5.dp, Color.Black, shape)
+                )
+                q.options.forEach { option ->
+                    Button(
+                        onClick = { vm.answerSelected(option )},
+                        shape = RoundedCornerShape(10),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Black,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
+                            .semantics { testTag = if (option == q.correctAnswer) "correct" else "wrong" }
+                    )
+                    { Text(option)}
                 }
             }
         }

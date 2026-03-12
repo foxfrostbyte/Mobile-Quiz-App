@@ -1,6 +1,7 @@
 package com.example.quizapp.activities
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,24 +20,29 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import coil.compose.AsyncImage
-import com.example.quizapp.data.PhotoManager
-import com.example.quizapp.models.Photo
+import com.example.quizapp.repository.AppRepo
+import com.example.quizapp.room.AppDatabase
+import com.example.quizapp.room.PhotoData
 import com.example.quizapp.ui.theme.QuizAppTheme
+import com.example.quizapp.viewmodels.GalleryViewModel
+import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class Gallery : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,26 +57,36 @@ class Gallery : ComponentActivity() {
 }
 
 @Composable
-fun GalleryScreen() {
-    val photos = PhotoManager.photoList
+fun GalleryScreen(viewModel: GalleryViewModel? = null) {
     val context = LocalContext.current
+    val vm = viewModel ?: viewModel<GalleryViewModel>(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val db = AppDatabase.getDatabase(context)
+                val repository = AppRepo(db.dao)
+                return GalleryViewModel(repository) as T
+            }
+        }
+    )
+    val photos  by vm.photos.collectAsState()
+    val sortAsc by vm.sortAscendingState.collectAsState(initial = true)
     val shape = RoundedCornerShape(50.dp)
-
-    var showNameDialog by remember { mutableStateOf<Photo?>(null) }
+    var showNameDialog by remember { mutableStateOf<Uri?>(null) }
     var photoName by remember { mutableStateOf("")}
-    var sortedAsc by remember { mutableStateOf(true)}
-    var sortText by remember { mutableStateOf("Z-A")}
     var selectionMode by remember { mutableStateOf(false) }
-
     val selectImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            showNameDialog = Photo(answer = "", uri = uri)
+            if (uri.scheme == "content") {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: SecurityException) { }
+            }
+            showNameDialog = uri
             photoName = ""
         }
     }
@@ -108,18 +124,25 @@ fun GalleryScreen() {
                         .padding(bottom = 15.dp)
                 )
             }
-            items(photos) { photo ->
-                Column {
+            items(photos, key = { it.id }) { photo ->
+                val imageUri = when {
+                    !photo.uriString.isNullOrBlank() -> photo.uriString.toUri()
+                    photo.drawableId != null -> "android.resource://${context.packageName}/${photo.drawableId}".toUri()
+                    else -> null
+                }
+                Column(
+                    modifier = Modifier.semantics { testTag = "photo_item" }
+                ) {
                     Box(
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clip(shape)
                             .clickable(enabled = selectionMode) {
-                                PhotoManager.photoList.remove(photo)
+                                vm.deletePhoto(photo)
                             }
                     ) {
                         AsyncImage(
-                            model = photo.uri ?: photo.id,
+                            model = imageUri,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -159,18 +182,7 @@ fun GalleryScreen() {
             Text("Add Photo")
         }
         Button(
-            onClick = {
-                if (sortedAsc) {
-                    photos.sortByDescending { it.answer }
-                    sortText = "A-Z"
-                    sortedAsc = false
-                }
-                else {
-                    photos.sortBy { it.answer }
-                    sortText = "Z-A"
-                    sortedAsc = true
-                }
-            },
+            onClick = { vm.toggleSort() },
             shape = RoundedCornerShape(10),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Black,
@@ -180,12 +192,10 @@ fun GalleryScreen() {
                 .fillMaxWidth()
                 .padding(bottom = 10.dp, start = 20.dp, end = 20.dp)
         ) {
-            Text("Sort By $sortText")
+            Text("Sort By ${if (sortAsc) "A-Z" else "Z-A"}")
         }
         Button(
-            onClick = {
-                selectionMode = !selectionMode
-            },
+            onClick = { selectionMode = !selectionMode },
             shape = RoundedCornerShape(10),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Black,
@@ -209,14 +219,21 @@ fun GalleryScreen() {
                     value = photoName,
                     onValueChange = { photoName = it },
                     label = { Text("Answer") },
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.semantics { testTag = "photo_name_input" }
                 )
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (photoName.isNotBlank()) {
-                            PhotoManager.addPhoto(Photo(answer = photoName, uri = photo.uri))
+                            vm.addPhoto(
+                                PhotoData(
+                                    answer = photoName.trim(),
+                                    uriString = photo.toString(),
+                                    drawableId = null
+                                )
+                            )
                             showNameDialog = null
                             photoName = ""
                         }

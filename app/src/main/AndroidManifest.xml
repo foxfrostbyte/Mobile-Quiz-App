@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
+        android:name=".QuizApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,6 +12,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.QuizApp">
+        <provider
+            android:authorities="com.example.quizapp.provider"
+            android:name=".provider.QuizContentProvider"
+            android:exported="true" />
         <activity
             android:name=".activities.Gallery"
             android:exported="false"
