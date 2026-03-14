@@ -21,12 +21,13 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MainMenuTest {
     @get:Rule
-    val activityRule = ActivityScenarioRule(MainMenu::class.java)
+    val testRule = ActivityScenarioRule(MainMenu::class.java)
 
     @Before
     fun initIntents() {
         Intents.init()
     }
+
     @After
     fun releaseIntents() {
         Intents.release()
@@ -35,26 +36,18 @@ class MainMenuTest {
     @Test
     fun openGallery() {
         onView(withId(R.id.GalleryBtn)).perform(click())
-        Intents.intended(
-            IntentMatchers.hasComponent(
-                ComponentName(
-                    InstrumentationRegistry.getInstrumentation().targetContext,
-                    Gallery::class.java
-                )
-            )
+        Intents.intended(IntentMatchers.hasComponent(ComponentName(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            Gallery::class.java))
         )
     }
 
     @Test
     fun openQuiz() {
         onView(withId(R.id.QuizBtn)).perform(click())
-        Intents.intended(
-            IntentMatchers.hasComponent(
-                ComponentName(
-                    InstrumentationRegistry.getInstrumentation().targetContext,
-                    Quiz::class.java
-                )
-            )
+        Intents.intended(IntentMatchers.hasComponent(ComponentName(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            Quiz::class.java))
         )
     }
 }

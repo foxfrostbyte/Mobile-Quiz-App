@@ -26,8 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -130,7 +129,7 @@ fun QuizScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { testTag = "score" }
+                    .testTag("score")
             )
             Spacer(modifier = Modifier.weight(1f))
         }
@@ -180,7 +179,7 @@ fun QuizScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
-                            .semantics { testTag = if (option == q.correctAnswer) "correct" else "wrong" }
+                            .testTag(if (option == q.correctAnswer) "correct" else "wrong")
                     )
                     { Text(option)}
                 }

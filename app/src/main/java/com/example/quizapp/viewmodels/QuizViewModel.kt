@@ -64,7 +64,7 @@ class QuizViewModel(private val repo: AppRepo) : ViewModel() {
             .shuffled()
             .take(2)
             .map { it.answer }
-        currentQuestion = QuizQuestion(
+            currentQuestion = QuizQuestion(
             photo = photo,
             correctAnswer = photo.answer,
             options = (listOf(photo.answer) + wrong).shuffled()

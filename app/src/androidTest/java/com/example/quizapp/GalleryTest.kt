@@ -1,10 +1,11 @@
 package com.example.quizapp
 
+
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
@@ -26,11 +27,18 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class GalleryTest {
     @get:Rule
-    val activityRule = createAndroidComposeRule<Gallery>()
+    val testRule = createAndroidComposeRule<Gallery>()
 
     @Before
     fun initIntents() {
         Intents.init()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext.packageName
+        val imageUri = Uri.parse("android.resource://${context}/${R.drawable.cat_image}")
+        val resultData = Intent().setData(imageUri)
+        val result = Instrumentation.ActivityResult(Activity.RESULT_OK, resultData)
+
+        Intents.intending(IntentMatchers.hasAction(Intent.ACTION_OPEN_DOCUMENT)).respondWith(result)
     }
 
     @After
@@ -39,14 +47,25 @@ class GalleryTest {
     }
 
     @Test
-    fun deletePhoto_Count() {
-        val initialCount = activityRule.onAllNodesWithTag("photo_item").fetchSemanticsNodes().size
+    fun addPhoto_Count() {
+        val initialCount = testRule.onAllNodesWithTag("photoItem").fetchSemanticsNodes().size
         if (initialCount == 0) return
 
-        activityRule.onNodeWithText("Delete").performClick()
-        activityRule.onAllNodesWithTag("photo_item").onFirst().performClick()
+        testRule.onNodeWithText("Add Photo").performClick()
+        testRule.onNodeWithTag("photoAnswer").performTextInput("Cat")
+        testRule.onNodeWithText("Ok").performClick()
 
-        val newCount = activityRule.onAllNodesWithTag("photo_item").fetchSemanticsNodes().size
-        assert(newCount == initialCount - 1)
+        testRule.onAllNodesWithTag("photoItem").assertCountEquals(initialCount + 1)
+    }
+
+    @Test
+    fun deletePhoto_Count() {
+        val initialCount = testRule.onAllNodesWithTag("photoItem").fetchSemanticsNodes().size
+        if (initialCount == 0) return
+
+        testRule.onNodeWithText("Delete").performClick()
+        testRule.onAllNodesWithTag("photoItem").onFirst().performClick()
+
+        testRule.onAllNodesWithTag("photoItem").assertCountEquals(initialCount - 1)
     }
 }
