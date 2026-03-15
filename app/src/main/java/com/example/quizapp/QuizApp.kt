@@ -13,8 +13,7 @@ class QuizApp : Application() {
 
         runBlocking(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(applicationContext)
-            val dao = db.dao
-            val existing = dao.getPhotos().first()
+            val existing = db.dao.getPhotos().first()
             if (existing.isEmpty()) {
                 val builtIn = listOf(
                     PhotoData(
@@ -49,7 +48,7 @@ class QuizApp : Application() {
                     )
                 )
                 builtIn.forEach { photo ->
-                    dao.insertPhoto(photo)
+                    db.dao.insertPhoto(photo)
                 }
             }
         }
