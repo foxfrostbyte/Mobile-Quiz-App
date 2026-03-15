@@ -1,6 +1,7 @@
 package com.example.quizapp.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.quizapp.repository.AppRepo
 import com.example.quizapp.room.PhotoData
@@ -45,4 +46,14 @@ class GalleryViewModel(private val repo: AppRepo) : ViewModel() {
     }
     val sortAscendingState: StateFlow<Boolean>
         get() = sortAscending
+
+    class Factory(private val repository: AppRepo) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(GalleryViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return GalleryViewModel(repository) as T
+            }
+            throw IllegalArgumentException("Factory in GalleryViewModel failed.")
+        }
+    }
 }

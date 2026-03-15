@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,11 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import coil.compose.AsyncImage
 import com.example.quizapp.repository.AppRepo
 import com.example.quizapp.room.AppDatabase
@@ -41,34 +39,29 @@ import com.example.quizapp.room.PhotoData
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.example.quizapp.viewmodels.GalleryViewModel
 import androidx.core.net.toUri
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 class Gallery : ComponentActivity() {
+    private val viewModel: GalleryViewModel by viewModels {
+        GalleryViewModel.Factory(
+            AppRepo(AppDatabase.getDatabase(applicationContext).dao)
+        )
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             QuizAppTheme {
-                    GalleryScreen()
+                    GalleryScreen(viewModel = viewModel)
             }
         }
     }
 }
 
 @Composable
-fun GalleryScreen(viewModel: GalleryViewModel? = null) {
+fun GalleryScreen(viewModel: GalleryViewModel) {
     val context = LocalContext.current
-    val vm = viewModel ?: viewModel<GalleryViewModel>(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val db = AppDatabase.getDatabase(context)
-                val repository = AppRepo(db.dao)
-                return GalleryViewModel(repository) as T
-            }
-        }
-    )
-    val photos  by vm.photos.collectAsState()
-    val sortAsc by vm.sortAscendingState.collectAsState(initial = true)
+    val photos by viewModel.photos.collectAsState()
+    val sortAsc by viewModel.sortAscendingState.collectAsState(initial = true)
     val shape = RoundedCornerShape(50.dp)
     var showNameDialog by remember { mutableStateOf<Uri?>(null) }
     var photoName by remember { mutableStateOf("")}
@@ -137,7 +130,7 @@ fun GalleryScreen(viewModel: GalleryViewModel? = null) {
                             .aspectRatio(1f)
                             .clip(shape)
                             .clickable(enabled = selectionMode) {
-                                vm.deletePhoto(photo)
+                                viewModel.deletePhoto(photo)
                             }
                     ) {
                         AsyncImage(
@@ -181,7 +174,7 @@ fun GalleryScreen(viewModel: GalleryViewModel? = null) {
             Text("Add Photo")
         }
         Button(
-            onClick = { vm.toggleSort() },
+            onClick = { viewModel.toggleSort() },
             shape = RoundedCornerShape(10),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Black,
@@ -226,7 +219,7 @@ fun GalleryScreen(viewModel: GalleryViewModel? = null) {
                 Button(
                     onClick = {
                         if (photoName.isNotBlank()) {
-                            vm.addPhoto(
+                            viewModel.addPhoto(
                                 PhotoData(
                                     answer = photoName.trim(),
                                     uriString = photo.toString(),
@@ -247,13 +240,5 @@ fun GalleryScreen(viewModel: GalleryViewModel? = null) {
                 }
             }
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GalleryScreenPreview() {
-    QuizAppTheme {
-        GalleryScreen()
     }
 }

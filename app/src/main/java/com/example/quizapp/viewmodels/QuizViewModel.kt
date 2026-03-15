@@ -8,6 +8,7 @@ import com.example.quizapp.repository.AppRepo
 import com.example.quizapp.room.PhotoData
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -31,8 +32,6 @@ class QuizViewModel(private val repo: AppRepo) : ViewModel() {
         private set
     var notEnoughPhotos by mutableStateOf(false)
         private set
-    var isLoading by mutableStateOf(true)
-        private set
     private var quizPhotoList: List<PhotoData> = emptyList()
     private var quizInitialized = false
 
@@ -40,7 +39,6 @@ class QuizViewModel(private val repo: AppRepo) : ViewModel() {
         if (quizInitialized) return
         quizInitialized = true
         viewModelScope.launch {
-            isLoading = true
             val photos = repo.getPhotos().first()
             if (photos.size < 3) {
                 notEnoughPhotos = true
@@ -53,7 +51,6 @@ class QuizViewModel(private val repo: AppRepo) : ViewModel() {
                 isQuizOver = false
                 pickNewQuestion()
             }
-            isLoading = false
         }
     }
     private fun pickNewQuestion() {
@@ -79,6 +76,16 @@ class QuizViewModel(private val repo: AppRepo) : ViewModel() {
         } else {
             isQuizOver = true
             currentQuestion = null
+        }
+    }
+
+    class Factory(private val repository: AppRepo) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(QuizViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return QuizViewModel(repository) as T
+            }
+            throw IllegalArgumentException("Factory in QuizViewModel failed.")
         }
     }
 }

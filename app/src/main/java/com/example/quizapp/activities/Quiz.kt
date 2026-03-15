@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,57 +29,40 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.quizapp.ui.theme.QuizAppTheme
 import com.example.quizapp.viewmodels.QuizViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import com.example.quizapp.repository.AppRepo
 import com.example.quizapp.room.AppDatabase
 
 class Quiz : ComponentActivity() {
+    private val viewModel: QuizViewModel by viewModels {
+        QuizViewModel.Factory(
+            AppRepo(AppDatabase.getDatabase(applicationContext).dao)
+        )
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             QuizAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    QuizScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                    QuizScreen(viewModel = viewModel)
             }
         }
     }
 }
 
 @Composable
-fun QuizScreen(
-    modifier: Modifier = Modifier,
-    quizViewModel: QuizViewModel? = null
-) {
+fun QuizScreen(viewModel: QuizViewModel) {
     val shape = RoundedCornerShape(150.dp)
     val context = LocalContext.current
-    val vm = quizViewModel ?: viewModel<QuizViewModel>(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val db = AppDatabase.getDatabase(context)
-                val repository = AppRepo(db.dao)
-                return QuizViewModel(repository) as T
-            }
-        }
-    )
+    LaunchedEffect(Unit) { viewModel.loadQuiz() }
 
-    LaunchedEffect(Unit) { vm.loadQuiz() }
-
-    if(vm.notEnoughPhotos) {
+    if(viewModel.notEnoughPhotos) {
         val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
         Dialog(onDismissRequest = { backDispatcher?.onBackPressed() }) {
             Column(
@@ -115,14 +98,14 @@ fun QuizScreen(
     }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFe5deef))
     ) {
-        if(vm.isQuizOver) {
+        if(viewModel.isQuizOver) {
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "Score: ${vm.score} / ${vm.totalRounds}",
+                text = "Score: ${viewModel.score} / ${viewModel.totalRounds}",
                 color = Color.Black,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
@@ -152,7 +135,7 @@ fun QuizScreen(
                 modifier = Modifier
                     .fillMaxWidth()
             )
-            vm.currentQuestion?.let { q ->
+            viewModel.currentQuestion?.let { q ->
                 val imageUri = when {
                     !q.photo.uriString.isNullOrBlank() -> q.photo.uriString.toUri()
                     q.photo.drawableId != null -> "android.resource://${context.packageName}/${q.photo.drawableId}".toUri()
@@ -170,7 +153,7 @@ fun QuizScreen(
                 )
                 q.options.forEach { option ->
                     Button(
-                        onClick = { vm.answerSelected(option )},
+                        onClick = { viewModel.answerSelected(option )},
                         shape = RoundedCornerShape(10),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Black,
@@ -185,14 +168,5 @@ fun QuizScreen(
                 }
             }
         }
-    }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview2() {
-    QuizAppTheme {
-        QuizScreen()
     }
 }
