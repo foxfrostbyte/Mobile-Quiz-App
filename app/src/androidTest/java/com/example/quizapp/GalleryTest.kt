@@ -49,7 +49,6 @@ class GalleryTest {
     @Test
     fun addPhoto_Count() {
         val initialCount = testRule.onAllNodesWithTag("photoItem").fetchSemanticsNodes().size
-        if (initialCount == 0) return
 
         testRule.onNodeWithText("Add Photo").performClick()
         testRule.onNodeWithTag("photoAnswer").performTextInput("Cat")
