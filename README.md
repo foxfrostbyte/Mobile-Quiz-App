@@ -6,5 +6,7 @@
 <br>
 
 <div align="center">
+  <img width="1188" height="1249" alt="quizapp" src="https://github.com/user-attachments/assets/d5be5442-9745-4e5e-aac4-04553cde1639" />
   <img height="700" src="https://github.com/user-attachments/assets/e331469b-9af7-4e25-ac3b-a9dab060359e" alt="QuizAppGif" style="max-height: 700px; width: auto;">
 </div>
+
